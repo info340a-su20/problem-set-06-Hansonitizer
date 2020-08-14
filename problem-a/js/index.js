@@ -34,6 +34,10 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //You can test this function by passing it one of the above array items
 //(e.g., `EXAMPLE_SEARCH_RESULTS.results[0]).
 
+function renderTrack(track) {
+  $('#records').append('<img src="' + track.artworkUrl100 + '" alt="' + track.trackName + '" title="' + track.trackName + '">');
+}
+
 
 
 //Define a function `renderSearchResults()` that takes in an object with a
@@ -45,7 +49,17 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //
 //You can test this function by passing it the `EXAMPLE_SEARCH_RESULTS` object.
 
-
+function renderSearchResults(resultobject) {
+  $('#records').empty();
+  if (resultobject.results.length == 0) { 
+    let newError = new Error("No results found");
+    renderError(newError);
+  } else {
+    for (let i = 0; i < resultobject.results.length; i++) {
+      renderTrack(resultobject.results[i]);
+    }
+  }
+}
 
 //Now it's the time to practice using `fetch()`! First, modify the `index.html`
 //file to load the polyfills for _BOTH_ the fetch() function and Promises, so
@@ -69,7 +83,24 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //your favorite band (you CANNOT test it with the search button yet!)
 const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term={searchTerm}";
 
-
+function fetchTrackList(term) {
+  let url = URL_TEMPLATE.replace("{searchTerm}", term);
+  togglerSpinner();
+  let promise = fetch(url)
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      renderSearchResults(data);
+    })
+    .catch(function(error) {
+      renderError(error);
+    })
+    .then(function() {
+      togglerSpinner();
+    });
+  return promise;
+}
 
 
 //Add an event listener to the "search" button so that when it is clicked (and 
@@ -77,14 +108,20 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //user-entered `#searchQuery` value. Use the `preventDefault()` function to keep
 //the form from being submitted as usual (and navigating to a different page).
 
-
+let search = $('button');
+search.click(function(event) {
+  event.preventDefault();
+  fetchTrackList($('#searchQuery').val())
+});
 
 //Next, add some error handling to the page. Define a function `renderError()`
 //that takes in an "Error object" and displays that object's `message` property
 //on the page. Display this by creating a `<p class="alert alert-danger">` and
 //placing that alert inside the `#records` element.
 
-
+function renderError(errorobj) {
+  $('#records').append('<p class="alert alert-danger">' + errorobj.message + '</p>');
+}
 
 //Add the error handing to your program in two ways:
 //(1) Add a `.catch()` callback to the AJAX call in `fetchTrackList()` that
@@ -109,7 +146,9 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //download the data and `catch()` the error, and `then()` show the spinner.
 
 
-
+function togglerSpinner() {
+  $('.fa-spinner').toggleClass('d-none');
+}
 
 //Optional extra: add the ability to "play" each track listing by clicking
 //on it. Modify the `renderTrack()` function to assign a `'click'` listener to
